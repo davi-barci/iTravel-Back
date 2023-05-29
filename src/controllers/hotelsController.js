@@ -23,3 +23,12 @@ export async function getHotels(req, res) {
         return res.status(500).send(err.message);
     }
 };
+
+export async function getCities(req, res){
+    try {
+        const cities = await db.query(`SELECT * FROM cities`);
+        return res.status(200).send(cities.rows);
+    } catch (err) {
+        return res.status(500).send(err.message);
+    }
+}

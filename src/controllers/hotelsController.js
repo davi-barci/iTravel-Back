@@ -2,15 +2,68 @@ import { db } from '../database/database.connection.js';
 
 export async function getHotelById(req, res) {
     const { id } = req.params;
-
+  
     try {
-        const hotel = await db.query(`SELECT * FROM hotels WHERE id=$1`, [id]);
-        if (!hotel.rowCount) return res.sendStatus(404);
-        return res.status(200).send(hotel.rows);
+      const hotels = await db.query(`
+        SELECT
+          hotels.name AS hotel_name,
+          hotels.address,
+          hotels."dailyPrice",
+          hotels.rating,
+          hotels."reviewsNumber",
+          hotels.description,
+          hotels.id AS hotel_id,
+          amenities.name AS amenity_name,
+          amenities."iconUrl"
+        FROM hotels
+        LEFT JOIN "hotelsAmenities" ON hotels.id = "hotelsAmenities"."hotelId"
+        LEFT JOIN amenities ON "hotelsAmenities"."amenityId" = amenities.id
+        WHERE hotels.id = $1
+      `, [id]);
+  
+      const formattedHotels = hotels.rows.reduce((acc, row) => {
+        const existingHotel = acc.find(hotel => hotel.hotel_id === row.hotel_id);
+        if (existingHotel) {
+          existingHotel.amenities.push({ name: row.amenity_name, iconUrl: row.iconUrl });
+        } else {
+          acc.push({
+            hotel_id: row.hotel_id,
+            hotel_name: row.hotel_name,
+            rating: row.rating,
+            reviewsNumber: row.reviewsNumber,
+            address: row.address,
+            dailyPrice: row.dailyPrice,
+            description: row.description,
+            amenities: [{ name: row.amenity_name, iconUrl: row.iconUrl }]
+          });
+        }
+        return acc;
+      }, []);
+  
+      const imagesQuery = await db.query(`
+        SELECT "hotelId", "imageUrl"
+        FROM "hotelsImages"
+        WHERE "hotelId" = $1
+      `, [id]);
+  
+      const hotelImages = imagesQuery.rows.reduce((acc, row) => {
+        if (!acc[row.hotelId]) {
+          acc[row.hotelId] = [];
+        }
+        acc[row.hotelId].push(row.imageUrl);
+        return acc;
+      }, {});
+  
+      formattedHotels.forEach(hotel => {
+        hotel.images = hotelImages[hotel.hotel_id] || [];
+      });
+  
+      return res.status(200).send(formattedHotels);
     } catch (err) {
-        return res.status(500).send(err.message);
+      return res.status(500).send(err.message);
     }
-};
+  };
+    
 
 export async function getHotels(req, res) {
     const { cityId } = req.params;

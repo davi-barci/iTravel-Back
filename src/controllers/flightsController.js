@@ -62,6 +62,7 @@ export async function getFlightById(req, res) {
             ap_destination.acronym AS destinationAirportAcronym,
             ap_destination.name AS destinationAirport,
             a.logo AS airlineLogo,
+            a.rating AS airlineRating,
             f.image
         FROM
             flights AS f

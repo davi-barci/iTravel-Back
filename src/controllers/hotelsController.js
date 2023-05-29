@@ -1,6 +1,6 @@
 import { db } from '../database/database.connection.js';
 
-export async function getHotels(req, res) {
+export async function getHotelById(req, res) {
     const { id } = req.params;
 
     try {
@@ -11,3 +11,4 @@ export async function getHotels(req, res) {
         return res.status(500).send(err.message);
     }
 };
+

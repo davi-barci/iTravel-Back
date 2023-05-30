@@ -51,7 +51,7 @@ export async function getHotels(req, res) {
     const { maxValue, minValue } = req.query;
   
     try {
-      const hotels = await getHotelsRepository(cityId, maxValue, minValue);
+      const hotels = await getHotelsRepository(cityId, minValue, maxValue);
   
       const formattedHotels = hotels.rows.reduce((acc, row) => {
         const existingHotel = acc.find(hotel => hotel.hotel_id === row.hotel_id);

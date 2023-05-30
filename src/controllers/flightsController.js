@@ -5,7 +5,7 @@ export async function getFlights(req, res) {
     const { maxValue, minValue } = req.query;
 
     try {
-        const flights = await getFlightsRepository(originCity, destinationCity, maxValue, minValue);
+        const flights = await getFlightsRepository(originCity, destinationCity, minValue, maxValue);
         return res.status(200).send(flights.rows);
     } catch (err) {
         return res.status(500).send(err.message);

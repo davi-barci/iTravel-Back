@@ -1,25 +1,10 @@
-import { db } from '../database/database.connection.js';
+import { getCitiesRepository, getHotelByIdRepository, getHotelsRepository, getImagesRepository } from "../repositories/hotelsRepository.js";
 
 export async function getHotelById(req, res) {
     const { id } = req.params;
   
     try {
-      const hotels = await db.query(`
-        SELECT
-          hotels.name AS hotel_name,
-          hotels.address,
-          hotels."dailyPrice",
-          hotels.rating,
-          hotels."reviewsNumber",
-          hotels.description,
-          hotels.id AS hotel_id,
-          amenities.name AS amenity_name,
-          amenities."iconUrl"
-        FROM hotels
-        LEFT JOIN "hotelsAmenities" ON hotels.id = "hotelsAmenities"."hotelId"
-        LEFT JOIN amenities ON "hotelsAmenities"."amenityId" = amenities.id
-        WHERE hotels.id = $1
-      `, [id]);
+      const hotels = await getHotelByIdRepository(id);
   
       const formattedHotels = hotels.rows.reduce((acc, row) => {
         const existingHotel = acc.find(hotel => hotel.hotel_id === row.hotel_id);
@@ -40,11 +25,7 @@ export async function getHotelById(req, res) {
         return acc;
       }, []);
   
-      const imagesQuery = await db.query(`
-        SELECT "hotelId", "imageUrl"
-        FROM "hotelsImages"
-        WHERE "hotelId" = $1
-      `, [id]);
+      const imagesQuery = await getImagesRepository(id);
   
       const hotelImages = imagesQuery.rows.reduce((acc, row) => {
         if (!acc[row.hotelId]) {
@@ -70,22 +51,7 @@ export async function getHotels(req, res) {
     const { maxValue, minValue } = req.query;
   
     try {
-      const hotels = await db.query(`
-        SELECT
-          hotels.name AS hotel_name,
-          hotels.address,
-          hotels."dailyPrice",
-          hotels.rating,
-          hotels.id AS hotel_id,
-          amenities.name AS amenity_name,
-          amenities."iconUrl",
-          "hotelsImages"."imageUrl"
-        FROM hotels
-        LEFT JOIN "hotelsImages" ON hotels."mainImage" = "hotelsImages".id
-        LEFT JOIN "hotelsAmenities" ON hotels.id = "hotelsAmenities"."hotelId"
-        LEFT JOIN amenities ON "hotelsAmenities"."amenityId" = amenities.id
-        WHERE hotels."cityId" = $1 AND hotels."dailyPrice" BETWEEN $2 AND $3
-      `, [cityId, minValue, maxValue]);
+      const hotels = await getHotelsRepository(cityId, maxValue, minValue);
   
       const formattedHotels = hotels.rows.reduce((acc, row) => {
         const existingHotel = acc.find(hotel => hotel.hotel_id === row.hotel_id);
@@ -114,7 +80,7 @@ export async function getHotels(req, res) {
 
 export async function getCities(_req, res){
     try {
-        const cities = await db.query(`SELECT * FROM cities`);
+        const cities = await getCitiesRepository();
         return res.status(200).send(cities.rows);
     } catch (err) {
         return res.status(500).send(err.message);
